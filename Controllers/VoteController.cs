@@ -25,14 +25,19 @@ namespace VotingAppAPI.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Vote>>> GetVotes()
         {
-            return await _context.Votes.ToListAsync();
+            return await _context.Votes
+                .Include(v => v.Options)
+                .ToListAsync();
         }
+
 
         // GET: api/Vote/5
         [HttpGet("{id}")]
         public async Task<ActionResult<Vote>> GetVote(int id)
         {
-            var vote = await _context.Votes.FindAsync(id);
+            var vote = await _context.Votes
+                .Include(v => v.Options)
+                .FirstOrDefaultAsync(v => v.Id == id);
 
             if (vote == null)
             {
@@ -41,6 +46,7 @@ namespace VotingAppAPI.Controllers
 
             return vote;
         }
+
 
         // PUT: api/Vote/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
