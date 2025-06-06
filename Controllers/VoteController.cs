@@ -121,6 +121,30 @@ namespace VotingAppAPI.Controllers
             return CreatedAtAction("GetVote", new { id = vote.Id }, vote);
         }
 
+        // POST: api/Vote/5/options/11/vote
+        [HttpPost("{voteId}/options/{optionId}/vote")]
+        public async Task<ActionResult<Vote>> CastVote(int voteId, int optionId)
+        {
+            var option = await _context.Options
+                .Include(o => o.Vote)
+                .ThenInclude(v => v.Options)
+                .FirstOrDefaultAsync(o => o.Id == optionId && o.VoteId == voteId);
+
+            if (option == null)
+            {
+                return NotFound(new { error = "Option not found for this vote." });
+            }
+
+            option.VoteCount += 1;
+            await _context.SaveChangesAsync();
+
+            // Return the full vote with updated options
+            var updatedVote = option.Vote;
+
+            return Ok(updatedVote);
+        }
+
+
         // DELETE: api/Vote/5
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteVote(int id)
