@@ -45,33 +45,51 @@ namespace VotingAppAPI.Controllers
         // PUT: api/Vote/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutVote(int id, Vote vote)
+        public async Task<ActionResult<Vote>> PutVote(int id, Vote vote)
         {
             if (id != vote.Id)
             {
-                return BadRequest();
+                return BadRequest(new { error = "Vote ID mismatch." });
             }
 
-            _context.Entry(vote).State = EntityState.Modified;
-
-            try
+            if (vote.Options == null || !vote.Options.Any())
             {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!VoteExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
+                return BadRequest(new { error = "At least one option is required." });
             }
 
-            return NoContent();
+            var existingVote = await _context.Votes
+                .Include(v => v.Options)
+                .FirstOrDefaultAsync(v => v.Id == id);
+
+            if (existingVote == null)
+            {
+                return NotFound();
+            }
+
+            // Update vote fields
+            existingVote.TopicName = vote.TopicName;
+            existingVote.TopicDescription = vote.TopicDescription;
+
+            // Remove old options
+            _context.Options.RemoveRange(existingVote.Options);
+
+            // Add new options
+            foreach (var option in vote.Options)
+            {
+                option.VoteId = id; // Set FK
+                _context.Options.Add(option);
+            }
+
+            await _context.SaveChangesAsync();
+
+            var updatedVote = await _context.Votes
+                 .Include(v => v.Options)
+                 .FirstOrDefaultAsync(v => v.Id == id);
+
+            return Ok(updatedVote);
+
         }
+
 
         // POST: api/Vote
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
