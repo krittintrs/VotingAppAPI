@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace VotingAppAPI.Models
 {
     public class Option
@@ -6,7 +8,8 @@ namespace VotingAppAPI.Models
         public required string OptionName { get; set; }
 
         public int VoteId { get; set; }
-        public required Vote Vote { get; set; }
+        [JsonIgnore]
+        public Vote? Vote { get; set; }
 
         public int VoteCount { get; set; }
     }

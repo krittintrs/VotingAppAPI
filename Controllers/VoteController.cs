@@ -78,6 +78,19 @@ namespace VotingAppAPI.Controllers
         [HttpPost]
         public async Task<ActionResult<Vote>> PostVote(Vote vote)
         {
+            if (vote.Options == null || !vote.Options.Any())
+            {
+                return BadRequest(new
+                {
+                    error = "At least one option is required to create a vote."
+                });
+            }
+
+            foreach (var option in vote.Options)
+            {
+                option.Vote = vote;
+            }
+
             _context.Votes.Add(vote);
             await _context.SaveChangesAsync();
 
